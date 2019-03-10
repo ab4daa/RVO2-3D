@@ -103,7 +103,7 @@ namespace RVO {
 	 * \param   radius     The radius of the spherical constraint.
 	 * \param   result     A reference to the result of the linear program.
 	 */
-	void linearProgram4(const std::vector<Plane> &planes, size_t beginPlane, float radius, Vector3 &result);
+	void linearProgram4(const std::vector<Plane> &planes, size_t numObstacles, size_t beginPlane, float radius, Vector3 &result);
 
 	Agent::Agent(RVOSimulator *sim) : sim_(sim), id_(0), maxNeighbors_(0), maxSpeed_(0.0f), neighborDist_(0.0f), radius_(0.0f), timeHorizon_(0.0f), timeHorizonObst_(0.0f) { }
 
@@ -152,6 +152,7 @@ namespace RVO {
 			orcaPlanes_.push_back(plane);
 		}
 
+		const size_t numObst = orcaPlanes_.size();
 		const float invTimeHorizon = 1.0f / timeHorizon_;
 		/* Create agent ORCA planes. */
 		for (size_t i = 0; i < agentNeighbors_.size(); ++i) {
@@ -213,7 +214,7 @@ namespace RVO {
 		const size_t planeFail = linearProgram3(orcaPlanes_, maxSpeed_, prefVelocity_, false, newVelocity_);
 
 		if (planeFail < orcaPlanes_.size()) {
-			linearProgram4(orcaPlanes_, planeFail, maxSpeed_, newVelocity_);
+			linearProgram4(orcaPlanes_, numObst, planeFail, maxSpeed_, newVelocity_);
 		}
 	}
 
@@ -434,16 +435,16 @@ namespace RVO {
 		return planes.size();
 	}
 
-	void linearProgram4(const std::vector<Plane> &planes, size_t beginPlane, float radius, Vector3 &result)
+	void linearProgram4(const std::vector<Plane> &planes, size_t numObstacles, size_t beginPlane, float radius, Vector3 &result)
 	{
 		float distance = 0.0f;
 
 		for (size_t i = beginPlane; i < planes.size(); ++i) {
 			if (planes[i].normal * (planes[i].point - result) > distance) {
 				/* Result does not satisfy constraint of plane i. */
-				std::vector<Plane> projPlanes;
+				std::vector<Plane> projPlanes(planes.begin(), planes.begin() + static_cast<ptrdiff_t>(numObstacles));
 
-				for (size_t j = 0; j < i; ++j) {
+				for (size_t j = numObstacles; j < i; ++j) {
 					Plane plane;
 
 					const Vector3 crossProduct = cross(planes[j].normal, planes[i].normal);
