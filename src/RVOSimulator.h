@@ -47,6 +47,7 @@
 
 namespace RVO {
 	class Agent;
+	class Obstacle;
 	class KdTree;
 
 	/**
@@ -119,7 +120,7 @@ namespace RVO {
 		 * \param   velocity      The initial three-dimensional linear velocity of this agent (optional).
 		 * \return  The number of the agent.
 		 */
-		RVO_API size_t addAgent(const Vector3 &position, float neighborDist, size_t maxNeighbors, float timeHorizon, float radius, float maxSpeed, const Vector3 &velocity = Vector3());
+		RVO_API size_t addAgent(const Vector3 &position, float neighborDist, size_t maxNeighbors, float timeHorizon, float timeHorizonObst, float radius, float maxSpeed, const Vector3 &velocity = Vector3());
 
 		/**
 		 * \brief   Lets the simulator perform a simulation step and updates the three-dimensional position and three-dimensional velocity of each agent.
@@ -225,6 +226,8 @@ namespace RVO {
 		 */
 		RVO_API size_t getNumAgents() const;
 
+		RVO_API size_t getNumObstacles() const;
+
 		/**
 		 * \brief   Returns the time step of the simulation.
 		 * \return  The present time step of the simulation.
@@ -238,6 +241,8 @@ namespace RVO {
 		 */
 		RVO_API void removeAgent(size_t agentNo);
 
+		RVO_API void removeObstacle(size_t obstacleNo);
+
 		/**
 		 * \brief   Sets the default properties for any new agent that is added.
 		 * \param   neighborDist  The default maximum distance (center point to center point) to other agents a new agent takes into account in the navigation. The larger this number, the longer he running time of the simulation. If the number is too low, the simulation will not be safe. Must be non-negative.
@@ -247,7 +252,7 @@ namespace RVO {
 		 * \param   maxSpeed      The default maximum speed of a new agent. Must be non-negative.
 		 * \param   velocity      The default initial three-dimensional linear velocity of a new agent (optional).
 		 */
-		RVO_API void setAgentDefaults(float neighborDist, size_t maxNeighbors, float timeHorizon, float radius, float maxSpeed, const Vector3 &velocity = Vector3());
+		RVO_API void setAgentDefaults(float neighborDist, size_t maxNeighbors, float timeHorizon, float timeHorizonObst, float radius, float maxSpeed, const Vector3 &velocity = Vector3());
 
 		/**
 		 * \brief   Sets the maximum neighbor count of a specified agent.
@@ -311,12 +316,25 @@ namespace RVO {
 		 */
 		RVO_API void setTimeStep(float timeStep);
 
+		RVO_API size_t addObstacle(const Vector3 &point, float radius);
+
+		RVO_API const Vector3 &getObstaclePosition(size_t obstacleNo) const;
+
+		RVO_API float getObstacleRadius(size_t obstacleNo) const;
+
+		RVO_API void setObstaclePosition(size_t obstacleNo, const Vector3 &position);
+
+		RVO_API void setObstacleRadius(size_t obstacleNo, float radius);
+
+		RVO_API void processObstacles();
+
 	private:
 		Agent *defaultAgent_;
 		KdTree *kdTree_;
 		float globalTime_;
 		float timeStep_;
 		std::vector<Agent *> agents_;
+		std::vector<Obstacle *> obstacles_;
 
 		friend class Agent;
 		friend class KdTree;

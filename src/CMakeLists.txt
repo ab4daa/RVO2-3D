@@ -34,7 +34,8 @@ set(RVO_HEADERS
 	API.h
 	RVO.h
 	RVOSimulator.h
-	Vector3.h)
+	Vector3.h
+	Obstacle.h)
 
 set(RVO_SOURCES
 	Agent.cpp

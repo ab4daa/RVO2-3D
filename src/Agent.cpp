@@ -31,7 +31,7 @@
  */
 
 #include "Agent.h"
-
+#include "Obstacle.h"
 #include <cmath>
 #include <algorithm>
 
@@ -105,10 +105,13 @@ namespace RVO {
 	 */
 	void linearProgram4(const std::vector<Plane> &planes, size_t beginPlane, float radius, Vector3 &result);
 
-	Agent::Agent(RVOSimulator *sim) : sim_(sim), id_(0), maxNeighbors_(0), maxSpeed_(0.0f), neighborDist_(0.0f), radius_(0.0f), timeHorizon_(0.0f) { }
+	Agent::Agent(RVOSimulator *sim) : sim_(sim), id_(0), maxNeighbors_(0), maxSpeed_(0.0f), neighborDist_(0.0f), radius_(0.0f), timeHorizon_(0.0f), timeHorizonObst_(0.0f) { }
 
 	void Agent::computeNeighbors()
 	{
+		obstacleNeighbors_.clear();
+		sim_->kdTree_->computeObstacleNeighbors(this, neighborDist_ * neighborDist_);
+
 		agentNeighbors_.clear();
 
 		if (maxNeighbors_ > 0) {
@@ -119,8 +122,37 @@ namespace RVO {
 	void Agent::computeNewVelocity()
 	{
 		orcaPlanes_.clear();
-		const float invTimeHorizon = 1.0f / timeHorizon_;
+        
+		const float invTimeHorizonObst = 1.0f / timeHorizonObst_;
+		/*Obstacle ORCA planes*/
+		const size_t sz = obstacleNeighbors_.size();
+		for (size_t i = 0; i < sz; ++i)
+		{
+			const Obstacle *const other = obstacleNeighbors_[i].second;
+			const Vector3 relativePosition = other->position_ - position_;
+			const float distSq = absSq(relativePosition);
+			const float combinedRadius = radius_ + other->radius_;
+			const float combinedRadiusSq = sqr(combinedRadius);
+			const Vector3 relativeU = relativePosition / std::sqrt(distSq);
 
+			Plane plane;
+
+			if (distSq > combinedRadiusSq) {
+				/* No collision. */
+				plane.point = (invTimeHorizonObst * relativePosition) -
+					(combinedRadius * invTimeHorizonObst * relativeU);
+				plane.normal = -relativeU;
+			}
+			else
+			{
+				/* Collision. */
+				plane.point = Vector3(0.0f, 0.0f, 0.0f);
+				plane.normal = -relativeU;
+			}
+			orcaPlanes_.push_back(plane);
+		}
+
+		const float invTimeHorizon = 1.0f / timeHorizon_;
 		/* Create agent ORCA planes. */
 		for (size_t i = 0; i < agentNeighbors_.size(); ++i) {
 			const Agent *const other = agentNeighbors_[i].second;
@@ -208,6 +240,24 @@ namespace RVO {
 					rangeSq = agentNeighbors_.back().first;
 				}
 			}
+		}
+	}
+
+	void Agent::insertObstacleNeighbor(const Obstacle *obstacle, float rangeSq)
+	{
+		const float distSq = absSq(position_ - obstacle->position_);
+
+		if (distSq < rangeSq) {
+			obstacleNeighbors_.push_back(std::make_pair(distSq, obstacle));
+
+			size_t i = obstacleNeighbors_.size() - 1;
+
+			while (i != 0 && distSq < obstacleNeighbors_[i - 1].first) {
+				obstacleNeighbors_[i] = obstacleNeighbors_[i - 1];
+				--i;
+			}
+
+			obstacleNeighbors_[i] = std::make_pair(distSq, obstacle);
 		}
 	}
 

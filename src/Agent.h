@@ -47,6 +47,7 @@
 #include "Vector3.h"
 
 namespace RVO {
+	class Obstacle;
 	/**
 	 * \brief   Defines an agent in the simulation.
 	 */
@@ -75,6 +76,8 @@ namespace RVO {
 		 */
 		void insertAgentNeighbor(const Agent *agent, float &rangeSq);
 
+		void insertObstacleNeighbor(const Obstacle *obstacle, float rangeSq);
+
 		/**
 		 * \brief   Updates the three-dimensional position and three-dimensional velocity of this agent.
 		 */
@@ -91,7 +94,9 @@ namespace RVO {
 		float neighborDist_;
 		float radius_;
 		float timeHorizon_;
+		float timeHorizonObst_;
 		std::vector<std::pair<float, const Agent *> > agentNeighbors_;
+		std::vector<std::pair<float, const Obstacle *> > obstacleNeighbors_;
 		std::vector<Plane> orcaPlanes_;
 
 		friend class KdTree;

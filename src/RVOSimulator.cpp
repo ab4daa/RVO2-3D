@@ -37,6 +37,7 @@
 #endif
 
 #include "Agent.h"
+#include "Obstacle.h"
 #include "KdTree.h"
 
 namespace RVO {
@@ -114,6 +115,7 @@ namespace RVO {
 		agent->neighborDist_ = defaultAgent_->neighborDist_;
 		agent->radius_ = defaultAgent_->radius_;
 		agent->timeHorizon_ = defaultAgent_->timeHorizon_;
+        agent->timeHorizonObst_ = defaultAgent_->timeHorizonObst_;
 		agent->velocity_ = defaultAgent_->velocity_;
 
 		agent->id_ = agents_.size();
@@ -123,7 +125,7 @@ namespace RVO {
 		return agents_.size() - 1;
 	}
 
-	size_t RVOSimulator::addAgent(const Vector3 &position, float neighborDist, size_t maxNeighbors, float timeHorizon, float radius, float maxSpeed, const Vector3 &velocity)
+	size_t RVOSimulator::addAgent(const Vector3 &position, float neighborDist, size_t maxNeighbors, float timeHorizon, float timeHorizonObst, float radius, float maxSpeed, const Vector3 &velocity)
 	{
 		Agent *agent = new Agent(this);
 
@@ -133,6 +135,7 @@ namespace RVO {
 		agent->neighborDist_ = neighborDist;
 		agent->radius_ = radius;
 		agent->timeHorizon_ = timeHorizon;
+		agent->timeHorizonObst_ = timeHorizonObst;
 		agent->velocity_ = velocity;
 
 		agent->id_ = agents_.size();
@@ -219,7 +222,7 @@ namespace RVO {
 		return timeStep_;
 	}
 
-	void RVOSimulator::setAgentDefaults(float neighborDist, size_t maxNeighbors, float timeHorizon, float radius, float maxSpeed, const Vector3 &velocity)
+	void RVOSimulator::setAgentDefaults(float neighborDist, size_t maxNeighbors, float timeHorizon, float timeHorizonObst, float radius, float maxSpeed, const Vector3 &velocity)
 	{
 		if (defaultAgent_ == NULL) {
 			defaultAgent_ = new Agent(this);
@@ -230,6 +233,7 @@ namespace RVO {
 		defaultAgent_->neighborDist_ = neighborDist;
 		defaultAgent_->radius_ = radius;
 		defaultAgent_->timeHorizon_ = timeHorizon;
+		defaultAgent_->timeHorizonObst_ = timeHorizonObst;
 		defaultAgent_->velocity_ = velocity;
 	}
 
@@ -276,5 +280,52 @@ namespace RVO {
 	void RVOSimulator::setTimeStep(float timeStep)
 	{
 		timeStep_ = timeStep;
+	}
+
+	size_t RVOSimulator::addObstacle(const Vector3 &position, float radius)
+	{
+		Obstacle * newObstacle = new Obstacle();
+		newObstacle->position_ = position;
+		newObstacle->radius_ = radius;
+		obstacles_.push_back(newObstacle);
+
+		return obstacles_.size() - 1;
+	}
+
+	void RVOSimulator::removeObstacle(size_t obstacleNo)
+	{
+		delete obstacles_[obstacleNo];
+		obstacles_[obstacleNo] = obstacles_.back();
+		obstacles_.pop_back();
+	}
+
+	size_t RVOSimulator::getNumObstacles() const
+	{
+		return obstacles_.size();
+	}
+
+	const Vector3 &RVOSimulator::getObstaclePosition(size_t obstacleNo) const
+	{
+		return obstacles_[obstacleNo]->position_;
+	}
+
+	float RVOSimulator::getObstacleRadius(size_t obstacleNo) const
+	{
+		return obstacles_[obstacleNo]->radius_;
+	}
+
+	void RVOSimulator::setObstaclePosition(size_t obstacleNo, const Vector3 &position)
+	{
+		obstacles_[obstacleNo]->position_ = position;
+	}
+
+	void RVOSimulator::setObstacleRadius(size_t obstacleNo, float radius)
+	{
+		obstacles_[obstacleNo]->radius_ = radius;
+	}
+
+	void RVOSimulator::processObstacles()
+	{
+		kdTree_->buildObstacleTree();
 	}
 }

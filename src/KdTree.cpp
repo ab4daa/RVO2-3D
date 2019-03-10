@@ -35,6 +35,7 @@
 #include <algorithm>
 
 #include "Agent.h"
+#include "Obstacle.h"
 #include "Definitions.h"
 #include "RVOSimulator.h"
 
@@ -158,4 +159,121 @@ namespace RVO {
 			}
 		}
 	}
+
+	void KdTree::buildObstacleTree()
+	{
+		obstacles_ = sim_->obstacles_;
+
+		if (!obstacles_.empty()) {
+			obstacleTree_.resize(2 * obstacles_.size() - 1);
+			buildObstacleTreeRecursive(0, obstacles_.size(), 0);
+		}
+	}
+
+	void KdTree::buildObstacleTreeRecursive(size_t begin, size_t end, size_t node)
+	{
+		obstacleTree_[node].begin = begin;
+		obstacleTree_[node].end = end;
+		obstacleTree_[node].minCoord = obstacles_[begin]->position_;
+		obstacleTree_[node].maxCoord = obstacles_[begin]->position_;
+
+		for (size_t i = begin + 1; i < end; ++i) {
+			obstacleTree_[node].maxCoord[0] = std::max(obstacleTree_[node].maxCoord[0], obstacles_[i]->position_.x());
+			obstacleTree_[node].minCoord[0] = std::min(obstacleTree_[node].minCoord[0], obstacles_[i]->position_.x());
+			obstacleTree_[node].maxCoord[1] = std::max(obstacleTree_[node].maxCoord[1], obstacles_[i]->position_.y());
+			obstacleTree_[node].minCoord[1] = std::min(obstacleTree_[node].minCoord[1], obstacles_[i]->position_.y());
+			obstacleTree_[node].maxCoord[2] = std::max(obstacleTree_[node].maxCoord[2], obstacles_[i]->position_.z());
+			obstacleTree_[node].minCoord[2] = std::min(obstacleTree_[node].minCoord[2], obstacles_[i]->position_.z());
+		}
+
+		if (end - begin > RVO_MAX_LEAF_SIZE) {
+			/* No leaf node. */
+			size_t coord;
+
+			if (obstacleTree_[node].maxCoord[0] - obstacleTree_[node].minCoord[0] > obstacleTree_[node].maxCoord[1] - obstacleTree_[node].minCoord[1] && obstacleTree_[node].maxCoord[0] - obstacleTree_[node].minCoord[0] > obstacleTree_[node].maxCoord[2] - obstacleTree_[node].minCoord[2]) {
+				coord = 0;
+			}
+			else if (obstacleTree_[node].maxCoord[1] - obstacleTree_[node].minCoord[1] > obstacleTree_[node].maxCoord[2] - obstacleTree_[node].minCoord[2]) {
+				coord = 1;
+			}
+			else {
+				coord = 2;
+			}
+
+			const float splitValue = 0.5f * (obstacleTree_[node].maxCoord[coord] + obstacleTree_[node].minCoord[coord]);
+
+			size_t left = begin;
+
+			size_t right = end;
+
+			while (left < right) {
+				while (left < right && obstacles_[left]->position_[coord] < splitValue) {
+					++left;
+				}
+
+				while (right > left && obstacles_[right - 1]->position_[coord] >= splitValue) {
+					--right;
+				}
+
+				if (left < right) {
+					std::swap(obstacles_[left], obstacles_[right - 1]);
+					++left;
+					--right;
+				}
+			}
+
+			size_t leftSize = left - begin;
+
+			if (leftSize == 0) {
+				++leftSize;
+				++left;
+				++right;
+			}
+
+			obstacleTree_[node].left = node + 1;
+			obstacleTree_[node].right = node + 2 * leftSize;
+
+			buildObstacleTreeRecursive(begin, left, obstacleTree_[node].left);
+			buildObstacleTreeRecursive(left, end, obstacleTree_[node].right);
+		}
+	}
+
+	void KdTree::computeObstacleNeighbors(Agent *agent, float rangeSq) const
+	{
+		queryObstacleTreeRecursive(agent, rangeSq, 0);
+	}
+
+	void KdTree::queryObstacleTreeRecursive(Agent *agent, float rangeSq, size_t node) const
+	{
+		if (obstacleTree_[node].end - obstacleTree_[node].begin <= RVO_MAX_LEAF_SIZE) {
+			for (size_t i = obstacleTree_[node].begin; i < obstacleTree_[node].end; ++i) {
+				agent->insertObstacleNeighbor(obstacles_[i], rangeSq);
+			}
+		}
+		else {
+			const float distSqLeft = sqr(std::max(0.0f, obstacleTree_[obstacleTree_[node].left].minCoord[0] - agent->position_.x())) + sqr(std::max(0.0f, agent->position_.x() - obstacleTree_[obstacleTree_[node].left].maxCoord[0])) + sqr(std::max(0.0f, obstacleTree_[obstacleTree_[node].left].minCoord[1] - agent->position_.y())) + sqr(std::max(0.0f, agent->position_.y() - obstacleTree_[obstacleTree_[node].left].maxCoord[1])) + sqr(std::max(0.0f, obstacleTree_[obstacleTree_[node].left].minCoord[2] - agent->position_.z())) + sqr(std::max(0.0f, agent->position_.z() - obstacleTree_[obstacleTree_[node].left].maxCoord[2]));
+
+			const float distSqRight = sqr(std::max(0.0f, obstacleTree_[obstacleTree_[node].right].minCoord[0] - agent->position_.x())) + sqr(std::max(0.0f, agent->position_.x() - obstacleTree_[obstacleTree_[node].right].maxCoord[0])) + sqr(std::max(0.0f, obstacleTree_[obstacleTree_[node].right].minCoord[1] - agent->position_.y())) + sqr(std::max(0.0f, agent->position_.y() - obstacleTree_[obstacleTree_[node].right].maxCoord[1])) + sqr(std::max(0.0f, obstacleTree_[obstacleTree_[node].right].minCoord[2] - agent->position_.z())) + sqr(std::max(0.0f, agent->position_.z() - obstacleTree_[obstacleTree_[node].right].maxCoord[2]));
+
+			if (distSqLeft < distSqRight) {
+				if (distSqLeft < rangeSq) {
+					queryObstacleTreeRecursive(agent, rangeSq, obstacleTree_[node].left);
+
+					if (distSqRight < rangeSq) {
+						queryObstacleTreeRecursive(agent, rangeSq, obstacleTree_[node].right);
+					}
+				}
+			}
+			else {
+				if (distSqRight < rangeSq) {
+					queryObstacleTreeRecursive(agent, rangeSq, obstacleTree_[node].right);
+
+					if (distSqLeft < rangeSq) {
+						queryObstacleTreeRecursive(agent, rangeSq, obstacleTree_[node].left);
+					}
+				}
+			}
+		}
+	}
 }
+

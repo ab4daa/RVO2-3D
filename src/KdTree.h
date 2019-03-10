@@ -45,6 +45,7 @@
 
 namespace RVO {
 	class Agent;
+	class Obstacle;
 	class RVOSimulator;
 
 	/**
@@ -87,6 +88,7 @@ namespace RVO {
 			 */
 			Vector3 minCoord;
 		};
+		typedef AgentTreeNode ObstacleTreeNode;
 
 		/**
 		 * \brief   Constructs a <i>k</i>d-tree instance.
@@ -101,6 +103,10 @@ namespace RVO {
 
 		void buildAgentTreeRecursive(size_t begin, size_t end, size_t node);
 
+		void buildObstacleTree();
+
+		void buildObstacleTreeRecursive(size_t begin, size_t end, size_t node);
+
 		/**
 		 * \brief   Computes the agent neighbors of the specified agent.
 		 * \param   agent    A pointer to the agent for which agent neighbors are to be computed.
@@ -110,8 +116,14 @@ namespace RVO {
 
 		void queryAgentTreeRecursive(Agent *agent, float &rangeSq, size_t node) const;
 
+		void computeObstacleNeighbors(Agent *agent, float rangeSq) const;
+
+		void queryObstacleTreeRecursive(Agent *agent, float rangeSq, size_t node) const;
+
 		std::vector<Agent *> agents_;
 		std::vector<AgentTreeNode> agentTree_;
+		std::vector<Obstacle *> obstacles_;
+		std::vector<ObstacleTreeNode> obstacleTree_;
 		RVOSimulator *sim_;
 
 		friend class Agent;
@@ -120,3 +132,4 @@ namespace RVO {
 }
 
 #endif /* RVO_KD_TREE_H_ */
+
