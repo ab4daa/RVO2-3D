@@ -69,6 +69,9 @@ namespace RVO {
 			delete agents_[i];
 		}
 
+		for (size_t i = 0; i < obstacles_.size(); ++i)
+			delete obstacles_[i];
+
 		if (kdTree_ != NULL) {
 			delete kdTree_;
 		}
