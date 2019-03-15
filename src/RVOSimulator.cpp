@@ -116,6 +116,7 @@ namespace RVO {
 		agent->maxNeighbors_ = defaultAgent_->maxNeighbors_;
 		agent->maxSpeed_ = defaultAgent_->maxSpeed_;
 		agent->neighborDist_ = defaultAgent_->neighborDist_;
+		agent->neighborObstDist_ = defaultAgent_->neighborObstDist_;
 		agent->radius_ = defaultAgent_->radius_;
 		agent->timeHorizon_ = defaultAgent_->timeHorizon_;
         agent->timeHorizonObst_ = defaultAgent_->timeHorizonObst_;
@@ -128,7 +129,7 @@ namespace RVO {
 		return agents_.size() - 1;
 	}
 
-	size_t RVOSimulator::addAgent(const Vector3 &position, float neighborDist, size_t maxNeighbors, float timeHorizon, float timeHorizonObst, float radius, float maxSpeed, const Vector3 &velocity)
+	size_t RVOSimulator::addAgent(const Vector3 &position, float neighborDist, float neighborObstDist, size_t maxNeighbors, float timeHorizon, float timeHorizonObst, float radius, float maxSpeed, const Vector3 &velocity)
 	{
 		Agent *agent = new Agent(this);
 
@@ -136,6 +137,7 @@ namespace RVO {
 		agent->maxNeighbors_ = maxNeighbors;
 		agent->maxSpeed_ = maxSpeed;
 		agent->neighborDist_ = neighborDist;
+		agent->neighborObstDist_ = neighborObstDist;
 		agent->radius_ = radius;
 		agent->timeHorizon_ = timeHorizon;
 		agent->timeHorizonObst_ = timeHorizonObst;
@@ -185,6 +187,11 @@ namespace RVO {
 		return agents_[agentNo]->neighborDist_;
 	}
 
+	float RVOSimulator::getAgentNeighborObstDist(size_t agentNo) const
+	{
+		return agents_[agentNo]->neighborObstDist_;
+	}
+
 	const Vector3 &RVOSimulator::getAgentPosition(size_t agentNo) const
 	{
 		return agents_[agentNo]->position_;
@@ -225,7 +232,7 @@ namespace RVO {
 		return timeStep_;
 	}
 
-	void RVOSimulator::setAgentDefaults(float neighborDist, size_t maxNeighbors, float timeHorizon, float timeHorizonObst, float radius, float maxSpeed, const Vector3 &velocity)
+	void RVOSimulator::setAgentDefaults(float neighborDist, float neighborObstDist, size_t maxNeighbors, float timeHorizon, float timeHorizonObst, float radius, float maxSpeed, const Vector3 &velocity)
 	{
 		if (defaultAgent_ == NULL) {
 			defaultAgent_ = new Agent(this);
@@ -234,6 +241,7 @@ namespace RVO {
 		defaultAgent_->maxNeighbors_ = maxNeighbors;
 		defaultAgent_->maxSpeed_ = maxSpeed;
 		defaultAgent_->neighborDist_ = neighborDist;
+		defaultAgent_->neighborObstDist_ = neighborObstDist;
 		defaultAgent_->radius_ = radius;
 		defaultAgent_->timeHorizon_ = timeHorizon;
 		defaultAgent_->timeHorizonObst_ = timeHorizonObst;

@@ -92,11 +92,12 @@ namespace RVO {
 		size_t maxNeighbors_;
 		float maxSpeed_;
 		float neighborDist_;
+		float neighborObstDist_;
 		float radius_;
 		float timeHorizon_;
 		float timeHorizonObst_;
 		std::vector<std::pair<float, const Agent *> > agentNeighbors_;
-		std::vector<std::pair<float, const Obstacle *> > obstacleNeighbors_;
+		std::vector<const Obstacle *> obstacleNeighbors_;
 		std::vector<Plane> orcaPlanes_;
 
 		friend class KdTree;

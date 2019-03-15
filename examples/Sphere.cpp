@@ -59,7 +59,7 @@ void setupScenario(RVO::RVOSimulator *sim)
 	sim->setTimeStep(0.125f);
 
 	/* Specify the default parameters for agents that are subsequently added. */
-	sim->setAgentDefaults(15.0f, 10, 10.0f, 10.0f, 1.5f, 2.0f);
+	sim->setAgentDefaults(15.0f, 15.0f, 10, 10.0f, 10.0f, 1.5f, 2.0f);
 
 	/* Add agents, specifying their start position, and store their goals on the opposite side of the environment. */
 	for (float a = 0; a < M_PI; a += 0.1f) {

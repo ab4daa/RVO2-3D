@@ -120,7 +120,7 @@ namespace RVO {
 		 * \param   velocity      The initial three-dimensional linear velocity of this agent (optional).
 		 * \return  The number of the agent.
 		 */
-		RVO_API size_t addAgent(const Vector3 &position, float neighborDist, size_t maxNeighbors, float timeHorizon, float timeHorizonObst, float radius, float maxSpeed, const Vector3 &velocity = Vector3());
+		RVO_API size_t addAgent(const Vector3 &position, float neighborDist, float neighborObstDist, size_t maxNeighbors, float timeHorizon, float timeHorizonObst, float radius, float maxSpeed, const Vector3 &velocity = Vector3());
 
 		/**
 		 * \brief   Lets the simulator perform a simulation step and updates the three-dimensional position and three-dimensional velocity of each agent.
@@ -155,6 +155,7 @@ namespace RVO {
 		 * \return  The present maximum neighbor distance of the agent.
 		 */
 		RVO_API float getAgentNeighborDist(size_t agentNo) const;
+		RVO_API float getAgentNeighborObstDist(size_t agentNo) const;
 
 		/**
 		 * \brief   Returns the count of agent neighbors taken into account to compute the current velocity for the specified agent.
@@ -252,7 +253,7 @@ namespace RVO {
 		 * \param   maxSpeed      The default maximum speed of a new agent. Must be non-negative.
 		 * \param   velocity      The default initial three-dimensional linear velocity of a new agent (optional).
 		 */
-		RVO_API void setAgentDefaults(float neighborDist, size_t maxNeighbors, float timeHorizon, float timeHorizonObst, float radius, float maxSpeed, const Vector3 &velocity = Vector3());
+		RVO_API void setAgentDefaults(float neighborDist, float neighborObstDist, size_t maxNeighbors, float timeHorizon, float timeHorizonObst, float radius, float maxSpeed, const Vector3 &velocity = Vector3());
 
 		/**
 		 * \brief   Sets the maximum neighbor count of a specified agent.
